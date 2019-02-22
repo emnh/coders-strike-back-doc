@@ -1,0 +1,51 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{CSB: Coders Strike Back}
+\author{Eivind Magnus Hvidevold}
+\date{February 2019}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tikz}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent Coders Strike Back is a multiplayer coding game on CodinGame \citep{codingame}.
+The players each control a team of two pods during a race.
+As soon as a pod completes the race, that pod's team is declared the winner.
+The circuit of the race is made up of checkpoints.
+To complete one lap, your vehicle (pod) must pass through each one in order and back through the start.
+The first player to reach the start on the final lap wins.
+\end{abstract}
+
+\section{Introduction}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.15]{csb-intro.jpg}
+\caption{The Universe of Coders Strike Back}
+\label{threadsVsSync}
+\end{figure}
+
+\section{Basics}
+
+\par
+The map is 16000 units wide and 9000 units high.
+Let's create a sample map with some checkpoints.
+We'll use this for example calculations.
+
+\begin{tikzpicture}
+\draw (-1.5,0) -- (1.5,0);
+\draw (0,-1.5) -- (0,1.5);
+\draw (0,0) circle [radius=1cm];
+\end{tikzpicture}
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
