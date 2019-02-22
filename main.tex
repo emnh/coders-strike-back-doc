@@ -6,11 +6,59 @@
 \date{February 2019}
 
 \usepackage{natbib}
+\usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{xfp}
+\usepackage{caption}
+\usepackage{parskip}
+\usepackage{subfiles}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset { %
+    language=C++,
+    backgroundcolor=\color{black!5}, % set backgroundcolor
+    basicstyle=\footnotesize,% basic font setting
+}
+\pgfplotsset{compat=1.15}
+
+% \usepgfplotslibrary{external}
+
+% \tikzexternalize
+
+\setlength\parindent{0pt}
+
+\newcommand{\mapwidth}{16000}
+\newcommand{\mapheight}{9000}
+\newcommand{\cpradius}{600}
+\newcommand{\podradius}{400}
+\newcommand{\sx}[1]{\fpeval{#1 * 8 / \mapwidth}}
+\newcommand{\sy}[1]{\fpeval{#1 * 8 / \mapwidth}}
+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\def\print#1{\pgfmathparse{#1}\pgfmathresult}
+
+% \newenvironment{\scopeenv}{}
+
+% \newcommand{\emh}[1]{%
+% \ensuremath{
+% \FPeval\result{round(root(2,sin(#1)),2)}%
+% \sqrt{\sin(#1)} \approx \result%
+% }}
 
 \begin{document}
+
+% \tikzset{every picture/.append style={scale=2}}
 
 \maketitle
 
@@ -32,18 +80,10 @@ The first player to reach the start on the final lap wins.
 \label{threadsVsSync}
 \end{figure}
 
-\section{Basics}
 
-\par
-The map is 16000 units wide and 9000 units high.
-Let's create a sample map with some checkpoints.
-We'll use this for example calculations.
-
-\begin{tikzpicture}
-\draw (-1.5,0) -- (1.5,0);
-\draw (0,-1.5) -- (0,1.5);
-\draw (0,0) circle [radius=1cm];
-\end{tikzpicture}
+\subfile{maps}
+\subfile{podmove}
+\subfile{heaviside}
 
 
 \bibliographystyle{plain}

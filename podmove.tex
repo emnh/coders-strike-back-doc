@@ -1,0 +1,70 @@
+\documentclass[main.tex]{subfiles}
+\begin{document}
+
+\section{Pod movement}
+
+\subsection{Expert rules for pod movement}
+
+On each turn the pods movements are computed this way:
+\begin{enumerate}
+\item Rotation: the pod rotates to face the target point, with a maximum of 18 degrees (except for the 1rst round).
+\item Acceleration: the pod's facing vector is multiplied by the given thrust value. The result is added to the current speed vector.
+\item Movement: The speed vector is added to the position of the pod. If a collision would occur at this point, the pods rebound off each other.
+\item Friction: the current speed vector of each pod is multiplied by 0.85
+\item The speed's values are truncated and the position's values are rounded to the nearest integer.
+\end{enumerate}
+
+\par
+Collisions are elastic. The minimum impulse of a collision is 120.
+A boost is in fact an acceleration of 650. The number of boost available is common between pods.
+If no boost is available, the maximum thrust is used.
+A shield multiplies the Pod mass by 10.
+The provided angle is absolute. 0 degrees means facing EAST while 90 degrees means facing SOUTH.
+
+\newcommand{\cpx}[1]{\checkpoints[0][#1][0]}
+\newcommand{\cpy}[1]{\checkpoints[0][#1][1]}
+
+\subsection{Example pod movement}
+
+\par
+Let's see an example of pod movement. Let's work with map 1 in figure \ref{map1}. Assume the pod is starting at checkpoint 0 at
+$(\print{\cpx{0}}, \print{\cpy{0}})$ and wants to move towards checkpoint 1 at
+$(\print{\cpx{1}}, \print{\cpy{1}})$.
+We are able to choose the starting rotation so let's assume starting angle towards checkpoint 1.
+
+\subsubsection{Calculating the angle}
+
+\par
+To calculate the angle of a vector we can use the \href{https://github.com/inoryy/csb-ai-starter/blob/master/main.cpp#L325}{getAngle} method from inoryy's starter bot.
+
+\lstset{caption={getAngle method}}
+\begin{lstlisting}
+inline float get_angle(Point* p) {
+    float d = this->dist(p);
+    float dx = (p->x - x) / d;
+    float dy = (p->y - y) / d;
+
+    float a = acos(dx) * 180 / M_PI;
+
+    if (dy < 0) {
+        a = 360 - a;
+    }
+
+    return a;
+}
+\end{lstlisting}
+
+% \newcommand{\xone}{\pgfmathparse{\cpx[0]}}
+% \newcommand{\xtwo}{\pgfmathparse{\cpy[0]}}
+% \newcommand{\yone}{\pgfmathparse{\cpx[1]}}
+% \newcommand{\ytwo}{\pgfmathparse{\cpy[1]}}
+% % \newcommand{\dist}[0]{sqrt(({\xtwo{}} - {\xone{}})^2 + ({\yone{}} + {\ytwo{}})^2)}
+% \newcommand{\dist}[0]{\fpeval{\xone}}
+
+% $$ x_1 = \print{\cpx{0}} $$
+% $$ y_1 = \print{\cpy{0}} $$
+% $$ x_2 = \print{\cpx{1}} $$
+% $$ y_2 = \print{\cpy{1}} $$
+% $$ d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2} = {\dist} $$
+
+\end{document}
