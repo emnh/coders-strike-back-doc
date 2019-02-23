@@ -27,7 +27,18 @@ The provided angle is absolute. 0 degrees means facing EAST while 90 degrees mea
 \subsection{Example pod movement}
 
 \par
-Let's see an example of pod movement. Let's work with map 1 in figure \ref{map1}. Assume the pod is starting at checkpoint 0 at
+% TODO: output map once again
+Let's see an example of pod movement. Let's work with map 1:
+
+\begin{center}
+\begin{tikzpicture}
+\drawmap{1}
+\end{tikzpicture}
+\captionsetup{hypcap=false}
+\captionof{figure}{Map Number: 1}\label{exmap}%
+\end{center}
+
+Assume the pod is starting at checkpoint 0 at
 $(\print{\cpx{0}}, \print{\cpy{0}})$ and wants to move towards checkpoint 1 at
 $(\print{\cpx{1}}, \print{\cpy{1}})$.
 We are able to choose the starting rotation so let's assume starting angle towards checkpoint 1.
@@ -54,17 +65,148 @@ inline float get_angle(Point* p) {
 }
 \end{lstlisting}
 
-% \newcommand{\xone}{\pgfmathparse{\cpx[0]}}
-% \newcommand{\xtwo}{\pgfmathparse{\cpy[0]}}
-% \newcommand{\yone}{\pgfmathparse{\cpx[1]}}
-% \newcommand{\ytwo}{\pgfmathparse{\cpy[1]}}
-% % \newcommand{\dist}[0]{sqrt(({\xtwo{}} - {\xone{}})^2 + ({\yone{}} + {\ytwo{}})^2)}
+\pgfmathsetmacro{\xone}{\cpx{0}}
+\pgfmathsetmacro{\xtwo}{\cpx{1}}
+\pgfmathsetmacro{\yone}{\cpy{0}}
+\pgfmathsetmacro{\ytwo}{\cpy{1}}
+\newcommand{\dist}[0]{\fpeval{sqrt((\xtwo - \xone)^2 + (\yone - \ytwo)^2)}}
+\newcommand{\dx}[0]{\fpeval{(\xtwo - \xone) / \dist}}
+\newcommand{\dy}[0]{\fpeval{(\ytwo - \yone) / \dist}}
+\newcommand{\acosangle}[0]{\fpeval{acos(\dx) * 180.0 / pi}}
+\newcommand{\podangle}[0]{\fpeval{\dy < 0 ? (360.0 - \acosangle) : \acosangle}}
+\newcommand{\tx}[0]{\fpeval{cos(\podangle * pi / 180)}}
+\newcommand{\ty}[0]{\fpeval{sin(\podangle * pi / 180)}}
+\newcommand{\vxzero}{\fpeval{\tx * \maxthrust}}
+\newcommand{\vyzero}{\fpeval{\ty * \maxthrust}}
+
+\newcommand{\num}[1]{\fpeval{trunc(#1,0)}}
+\newcommand{\numf}[1]{\fpeval{trunc(#1,4)}}
+
 % \newcommand{\dist}[0]{\fpeval{\xone}}
 
-% $$ x_1 = \print{\cpx{0}} $$
-% $$ y_1 = \print{\cpy{0}} $$
-% $$ x_2 = \print{\cpx{1}} $$
-% $$ y_2 = \print{\cpy{1}} $$
-% $$ d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2} = {\dist} $$
+$$ x_1 = \xone $$
+$$ y_1 = \yone $$
+$$ x_2 = \xtwo $$
+$$ y_2 = \ytwo $$
+$$ d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2} $$
+$$ d = \sqrt{(\xtwo - \xone)^2 + (\yone - \ytwo)^2} $$
+$$ d = \sqrt{(\xtwo - \xone)^2 + (\yone - \ytwo)^2} $$
+$$ d \approx \num{\dist} $$
+$$ d_x = \frac{(\xtwo - \xone)}{\num\dist} = \numf\dx $$
+$$ d_y = \frac{(\ytwo - \yone)}{\num\dist} = \numf\dy $$
+$$ \angle_{acos} = \frac{\arccos{d_x} * 180}{\pi} = \num\acosangle \degree $$
+% $$ \angle_{pod} = d_y < 0 ? 360 - acosAngle : acosAngle = \num\podAngle $$
+
+$$
+  X=\left\{
+  \begin{array}{@{}ll@{}}
+    360 - \angle_{acos}, & \text{if}\ d_y < 0 \\
+    \angle_{pod}, & \text{otherwise}
+  \end{array}\right.
+  = \angle_{pod} = \num\podangle \degree
+$$
+
+\subsubsection{Calculating the velocity}
+\par
+Now we will give the pod a full thrust and no turning for the first turn and see where it ends up after a few turns.
+Give a thrust $t$ the new velocity vector is given by the recurrence:
+
+$$ v_{x_n} = v_{x_{n - 1}} + \cos(\angle_{pod_{n}}) * t $$
+$$ v_{y_n} = v_{y_{n - 1}} + \sin(\angle_{pod_{n}}) * t $$
+
+The max thrust is \maxthrust. We will give the pod full throttle! :)
+The pod is at rest at the start of the race.
+So with this formula we can compute $v_{x_0}$ and $v_{y_0}$.
+
+$$ t_{max} = \maxthrust $$
+$$ t_x = \cos(\frac{\angle_{pod}*\pi}{180}) = \numf\tx $$
+$$ t_y = \sin(\frac{\angle_{pod}*\pi}{180}) = \numf\ty $$
+$$ v_{x_0} = t_x * t_max = \numf\tx * \maxthrust = \numf\vxzero $$
+$$ v_{y_0} = t_y * t_max = \numf\ty * \maxthrust = \numf\vyzero $$
+
+Actually now we should take into account friction of $\friction $ and the fact that speed is truncated at end of turn, so the new velocity vector becomes:
+$$ f = \friction $$
+$$ v_{x_1} = \trunc(v_{x_0} * f) + \cos(\angle_{pod}) * t $$
+$$ v_{y_1} = \trunc(v_{y_0} * f)+ \sin(\angle_{pod}) * t $$
+
+\subsubsection{Moving the pod}
+\par
+Using the formula including friction and assuming the pod doesn't accelerate after first turn (don't worry we'll add it later) we can compute the trajectory of the pod:
+
+\newcommand{\stepPod}[3]{
+\newcount{\xn}
+\newcount{\yn}
+\newcount{\vx}
+\newcount{\vy}
+\newcount{\oxn}
+\newcount{\oyn}
+\newcount{\anglecounter}
+\pgfmathsetcount{\vx}{\vxzero}
+\pgfmathsetcount{\vy}{\vyzero}
+\pgfmathsetcount{\xn}{\xone}
+\pgfmathsetcount{\yn}{\yone}
+\pgfmathsetcount{\oxn}{\xn}
+\pgfmathsetcount{\oyn}{\yn}
+\pgfmathsetcount{\anglecounter}{\podangle}
+
+% \newcommand{\tx}[0]{\fpeval{cos(\podangle * pi / 180)}}
+% \newcommand{\ty}[0]{\fpeval{sin(\podangle * pi / 180)}}
+
+\foreach \i [evaluate={\i as \j using {\i - 1}}] in {1,...,#1} {
+    \pgfmathtruncatemacro{\k}{\j}
+    #3
+    \pgfmathsetcount{\global\oxn}{\xn}
+    \pgfmathsetcount{\global\oyn}{\yn}
+    \pgfmathsetcount{\global\vx}{\fpeval{trunc(\vx * 0.85, 0)} + \tx * #2}
+    \pgfmathsetcount{\global\vy}{\fpeval{trunc(\vy * 0.85, 0)} + \ty * #2}
+    \pgfmathsetcount{\global\xn}{\fpeval{round(\xn + \vx, 0)}}
+    \pgfmathsetcount{\global\yn}{\fpeval{round(\yn + \vy, 0)}}
+}
+}
+\stepPod{6}{0}{
+$$ (v_{x_\k}, v_{y_\k}) = (\the\vx, \the\vy) $$
+$$ (p_{x_\k}, p_{y_\k}) = (\the\xn, \the\yn) $$
+}
+
+\par
+And then we see the pod moving like this (not so far at all):
+
+\begin{center}
+\begin{tikzpicture}
+\drawmap{1}
+\stepPod{6}{0}{
+\draw[->] (\sx{\oxn}, \sy{\oyn}) -- (\sx{\xn}, \sy{\yn});
+}
+\end{tikzpicture}
+\captionsetup{hypcap=false}
+\captionof{figure}{Pod Trajectory}\label{exmap}%
+\end{center}
+
+\par
+So let us uphold a constant max thrust for the duration of the 6 turns this time and see what happens. We get:
+
+\begin{center}
+\begin{tikzpicture}
+\drawmap{1}
+\stepPod{6}{\maxthrust}{
+\draw[->] (\sx{\oxn}, \sy{\oyn}) -- (\sx{\xn}, \sy{\yn});
+\draw[line width=0.5pt] (\sx{\oxn}, \sy{\oyn}) -- (\sx{\xn}, \sy{\yn});
+% [postaction={decorate,decoration={markings,mark=at position 0.5 with {\arrow[black,line width=1.5pt]{>}}}}]
+}
+\end{tikzpicture}
+\captionsetup{hypcap=false}
+\captionof{figure}{Pod Trajectory}\label{exmap}%
+\end{center}
+
+\par
+We are more than halfway there this time :) . So we've seen a bit how the pod moves.
+But now how can we devise a strategy for adjusting the angle to move from checkpoint to checkpoint?
+A popular strategy that will get you to Gold league is -3vel, that is, subtract 3 times the current
+velocity to get the target for steering which you can output directly by CG bot, by the following formula.
+We already used $t$ for thrust so let's call the target $u$.
+
+$$ u_x = p_x - 3 * v_x $$
+$$ u_y = p_y - 3 * v_y $$
+
 
 \end{document}

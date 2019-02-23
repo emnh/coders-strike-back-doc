@@ -5,6 +5,7 @@
 \author{Eivind Magnus Hvidevold}
 \date{February 2019}
 
+\usepackage{import}
 \usepackage{natbib}
 \usepackage{amsmath}
 \usepackage{graphicx}
@@ -31,34 +32,23 @@
 }
 \pgfplotsset{compat=1.15}
 
+\usepackage{gensymb}
+
+% \usepackage{expl3}
+% \ExplSyntaxOn
+% \cs_new_eq:NN \fpeval \fp_eval:n
+% \ExplSyntaxOff
+\protected\def\fpset#1#2{\edef#1{\fpeval{#2}}}
+
 % \usepgfplotslibrary{external}
 
 % \tikzexternalize
 
 \setlength\parindent{0pt}
 
-\newcommand{\mapwidth}{16000}
-\newcommand{\mapheight}{9000}
-\newcommand{\cpradius}{600}
-\newcommand{\podradius}{400}
-\newcommand{\sx}[1]{\fpeval{#1 * 8 / \mapwidth}}
-\newcommand{\sy}[1]{\fpeval{#1 * 8 / \mapwidth}}
-
-\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
-
-\def\print#1{\pgfmathparse{#1}\pgfmathresult}
-
-% \newenvironment{\scopeenv}{}
-
-% \newcommand{\emh}[1]{%
-% \ensuremath{
-% \FPeval\result{round(root(2,sin(#1)),2)}%
-% \sqrt{\sin(#1)} \approx \result%
-% }}
+\usepackage{csb}
 
 \begin{document}
-
-% \tikzset{every picture/.append style={scale=2}}
 
 \maketitle
 
@@ -81,9 +71,9 @@ The first player to reach the start on the final lap wins.
 \end{figure}
 
 
-\subfile{maps}
+% \subfile{maps}
 \subfile{podmove}
-\subfile{heaviside}
+% \subfile{heaviside}
 
 
 \bibliographystyle{plain}
