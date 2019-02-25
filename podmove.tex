@@ -95,10 +95,9 @@ $$ d \approx \num{\dist} $$
 $$ d_x = \frac{(\xtwo - \xone)}{\num\dist} = \numf\dx $$
 $$ d_y = \frac{(\ytwo - \yone)}{\num\dist} = \numf\dy $$
 $$ \angle_{acos} = \frac{\arccos{d_x} * 180}{\pi} = \num\acosangle \degree $$
-% $$ \angle_{pod} = d_y < 0 ? 360 - acosAngle : acosAngle = \num\podAngle $$
 
 $$
-  X=\left\{
+  \angle_{pod} = \left\{
   \begin{array}{@{}ll@{}}
     360 - \angle_{acos}, & \text{if}\ d_y < 0 \\
     \angle_{pod}, & \text{otherwise}
@@ -121,13 +120,13 @@ So with this formula we can compute $v_{x_0}$ and $v_{y_0}$.
 $$ t_{max} = \maxthrust $$
 $$ t_x = \cos(\frac{\angle_{pod}*\pi}{180}) = \numf\tx $$
 $$ t_y = \sin(\frac{\angle_{pod}*\pi}{180}) = \numf\ty $$
-$$ v_{x_0} = t_x * t_max = \numf\tx * \maxthrust = \numf\vxzero $$
-$$ v_{y_0} = t_y * t_max = \numf\ty * \maxthrust = \numf\vyzero $$
+$$ v_{x_0} = t_x * t_{max} = \numf\tx * \maxthrust = \numf\vxzero $$
+$$ v_{y_0} = t_y * t_{max} = \numf\ty * \maxthrust = \numf\vyzero $$
 
 Actually now we should take into account friction of $\friction $ and the fact that speed is truncated at end of turn, so the new velocity vector becomes:
 $$ f = \friction $$
-$$ v_{x_1} = \trunc(v_{x_0} * f) + \cos(\angle_{pod}) * t $$
-$$ v_{y_1} = \trunc(v_{y_0} * f)+ \sin(\angle_{pod}) * t $$
+$$ v_{x_1} = \trunc(v_{x_0} * f + \cos(\angle_{pod})) * t $$
+$$ v_{y_1} = \trunc(v_{y_0} * f + \sin(\angle_{pod})) * t $$
 
 \subsubsection{Moving the pod}
 \par
@@ -157,8 +156,8 @@ Using the formula including friction and assuming the pod doesn't accelerate aft
     #3
     \pgfmathsetcount{\global\oxn}{\xn}
     \pgfmathsetcount{\global\oyn}{\yn}
-    \pgfmathsetcount{\global\vx}{\fpeval{trunc(\vx * 0.85, 0)} + \tx * #2}
-    \pgfmathsetcount{\global\vy}{\fpeval{trunc(\vy * 0.85, 0)} + \ty * #2}
+    \pgfmathsetcount{\global\vx}{\fpeval{trunc(\vx * 0.85 + \tx * #2, 0)}}
+    \pgfmathsetcount{\global\vy}{\fpeval{trunc(\vy * 0.85 + \ty * #2, 0)}}
     \pgfmathsetcount{\global\xn}{\fpeval{round(\xn + \vx, 0)}}
     \pgfmathsetcount{\global\yn}{\fpeval{round(\yn + \vy, 0)}}
 }
@@ -201,12 +200,61 @@ So let us uphold a constant max thrust for the duration of the 6 turns this time
 \par
 We are more than halfway there this time :) . So we've seen a bit how the pod moves.
 But now how can we devise a strategy for adjusting the angle to move from checkpoint to checkpoint?
-A popular strategy that will get you to Gold league is -3vel, that is, subtract 3 times the current
-velocity to get the target for steering which you can output directly by CG bot, by the following formula.
-We already used $t$ for thrust so let's call the target $u$.
 
-$$ u_x = p_x - 3 * v_x $$
-$$ u_y = p_y - 3 * v_y $$
+\subsubsection{-3vel}
+A popular strategy that will get you to Gold league is $-3$vel, that is, subtract 3 times the current
+velocity to get the target for steering which you can output directly from CG bot, by the following formula.
+We already used $t$ for thrust so let's call the target $u$. Let $(c_x, c_y)$ be the next checkpoint.
+Then we have:
+
+$$ u_x = c_x - 3 * v_x $$
+$$ u_y = c_y - 3 * v_y $$
+
+Let's start to analyze this solution. We want to know what happens in the referee and we are working with angles,
+so even if it is not required to compute the angle for a basic solution using $-3$vel, we do it for the analysis now.
+
+First we find the angle between the pod and the target point using getAngle, same as before, then we take the difference
+between this and the current pod angle and then clamp that to the range from $-\maxangle$ to $\maxangle$, which is the
+range of the maximum turn rate. Then we can add it to the pod angle. After this we'll surely have a complicated
+formula, so we'll see what we can do to approximate or simplify it later. Or if all else fails just plot the hell out
+of it.
+
+$$ (x_1, y_1) = (p_x, p_y) $$
+$$ (x_2, y_2) = (u_x, u_y) $$
+$$ d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2} $$
+$$ d_x = \frac{(x_2 - x_1)}{d} $$
+$$ d_y = \frac{(y_2 - y_1)}{d} $$
+$$ \angle_{acos} = \frac{\arccos{d_x} * 180}{\pi} $$
+$$
+  \angle_{target}=\left\{
+  \begin{array}{@{}ll@{}}
+    360 - \angle_{acos}, & \text{if}\ d_y < 0 \\
+    \angle_{target}, & \text{otherwise}
+  \end{array}\right.
+$$
+$$\angle_{pod_n} = \angle_{pod_{n-1}} + \clamp(\angle_{target}, -18, 18)$$
+$$ t_x = \cos(\frac{\angle_{pod}*\pi}{180}) $$
+$$ t_y = \sin(\frac{\angle_{pod}*\pi}{180}) $$
+$$ v_{x_0} = t_x * t_{max} $$
+$$ v_{y_0} = t_y * t_{max} $$
+$$ v_{x_n} = \trunc(v_{x_{n-1}} * f + \cos(\angle_{pod}) * t) $$
+$$ v_{y_n} = \trunc(v_{y_{n-1}} * f + \sin(\angle_{pod}) * t) $$
+
+Let's assume without loss of generality that the checkpoint is at $(0, 0)$.
+Let's also forget about that trunc since it's not essential to an approximate analysis.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \end{document}
